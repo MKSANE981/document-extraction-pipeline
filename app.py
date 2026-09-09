@@ -201,35 +201,55 @@ def run_extract(doc_text, template_name, lang):
         return json.dumps({"error": str(e)}, indent=2)
 
 
-def get_doc_preview(file_path):
-    """Render document to a displayable image (CPU, no GPU needed).
+MAX_PREVIEW_PAGES = 20
 
-    Images are returned as-is. PDFs are rasterised at 1.5× scale using
-    pypdfium2 (bundled with doctr) or PyMuPDF as fallback.
+
+def get_doc_preview(file_path):
+    """Render every page of a document to a list of PIL images (CPU only).
+
+    Returns a list of (image, caption) tuples compatible with gr.Gallery.
+    Images pass through as-is; PDFs are rasterised at 2× scale for sharpness.
+    Capped at MAX_PREVIEW_PAGES to avoid memory issues with long documents.
     """
     if file_path is None:
-        return None
+        return []
     path = file_path if isinstance(file_path, str) else str(file_path)
     ext = path.rsplit(".", 1)[-1].lower()
+
     if ext in ("png", "jpg", "jpeg", "webp", "bmp", "tiff"):
-        return path
+        return [(path, "")]
+
     if ext == "pdf":
+        pages = []
+        # Try pypdfium2 first (installed as a doctr dependency)
         try:
             import pypdfium2 as pdfium
             pdf = pdfium.PdfDocument(path)
-            bitmap = pdf[0].render(scale=1.5)
-            return bitmap.to_pil()
+            n = min(len(pdf), MAX_PREVIEW_PAGES)
+            for i in range(n):
+                bm = pdf[i].render(scale=2.0)
+                caption = f"Page {i + 1} / {len(pdf)}" if len(pdf) > 1 else ""
+                pages.append((bm.to_pil(), caption))
+            return pages
         except Exception:
             pass
+        # Fallback: PyMuPDF
         try:
             import fitz
             from PIL import Image as PILImage
             import io
-            pix = fitz.open(path)[0].get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
-            return PILImage.open(io.BytesIO(pix.tobytes("png")))
+            doc = fitz.open(path)
+            n = min(len(doc), MAX_PREVIEW_PAGES)
+            for i in range(n):
+                pix = doc[i].get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+                img = PILImage.open(io.BytesIO(pix.tobytes("png")))
+                caption = f"Page {i + 1} / {len(doc)}" if len(doc) > 1 else ""
+                pages.append((img, caption))
+            return pages
         except Exception:
-            return None
-    return None
+            return []
+
+    return []
 
 
 # ── UI ───────────────────────────────────────────────────────────────────────
@@ -312,9 +332,12 @@ CSS = """
 /* Section divider */
 .section-divider { border: none; border-top: 1px solid #e5e7eb; margin: .5rem 0 1rem; }
 
-/* Document viewer */
-#doc-viewer { border-radius: 8px; overflow: hidden; }
-#doc-viewer img { object-fit: contain; max-height: 380px; width: 100%; }
+/* Document viewer (Gallery) */
+#doc-viewer { border-radius: 8px; }
+#doc-viewer .grid-wrap { padding: 0 !important; gap: 0 !important; }
+#doc-viewer .thumbnail-item { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.12); }
+#doc-viewer .thumbnail-item img { object-fit: contain !important; background: #fff; }
+#doc-viewer .caption-label { font-size: .75rem; color: #9ca3af; text-align: center; padding: .2rem 0; }
 """
 
 with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
@@ -389,13 +412,15 @@ with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
 
             # Right: document viewer ───────────────────────────────────────
             with gr.Column(scale=1):
-                doc_image = gr.Image(
+                doc_viewer = gr.Gallery(
                     label="Document viewer",
-                    interactive=False,
-                    show_download_button=False,
+                    columns=1,
+                    rows=1,
+                    height=480,
+                    object_fit="contain",
                     show_label=True,
                     elem_id="doc-viewer",
-                    height=380,
+                    show_share_button=False,
                 )
 
     # ── Step 2: Analyse ───────────────────────────────────────────────────────
@@ -514,7 +539,7 @@ with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
     file_input.change(
         fn=get_doc_preview,
         inputs=file_input,
-        outputs=doc_image,
+        outputs=doc_viewer,
     )
 
     ocr_btn.click(
