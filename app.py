@@ -121,4 +121,4 @@ with gr.Blocks(title="Document Extraction Pipeline") as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name="0.0.0.0", show_api=False)
