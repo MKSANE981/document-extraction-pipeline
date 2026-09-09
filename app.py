@@ -201,6 +201,37 @@ def run_extract(doc_text, template_name, lang):
         return json.dumps({"error": str(e)}, indent=2)
 
 
+def get_doc_preview(file_path):
+    """Render document to a displayable image (CPU, no GPU needed).
+
+    Images are returned as-is. PDFs are rasterised at 1.5× scale using
+    pypdfium2 (bundled with doctr) or PyMuPDF as fallback.
+    """
+    if file_path is None:
+        return None
+    path = file_path if isinstance(file_path, str) else str(file_path)
+    ext = path.rsplit(".", 1)[-1].lower()
+    if ext in ("png", "jpg", "jpeg", "webp", "bmp", "tiff"):
+        return path
+    if ext == "pdf":
+        try:
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(path)
+            bitmap = pdf[0].render(scale=1.5)
+            return bitmap.to_pil()
+        except Exception:
+            pass
+        try:
+            import fitz
+            from PIL import Image as PILImage
+            import io
+            pix = fitz.open(path)[0].get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
+            return PILImage.open(io.BytesIO(pix.tobytes("png")))
+        except Exception:
+            return None
+    return None
+
+
 # ── UI ───────────────────────────────────────────────────────────────────────
 
 CSS = """
@@ -280,6 +311,10 @@ CSS = """
 
 /* Section divider */
 .section-divider { border: none; border-top: 1px solid #e5e7eb; margin: .5rem 0 1rem; }
+
+/* Document viewer */
+#doc-viewer { border-radius: 8px; overflow: hidden; }
+#doc-viewer img { object-fit: contain; max-height: 380px; width: 100%; }
 """
 
 with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
@@ -309,44 +344,59 @@ with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
             f'{UI_TEXT["en"]["step1"]}'
             '</div>'
         )
-        with gr.Tabs():
-            with gr.Tab(UI_TEXT["en"]["tab_upload"]) as tab_upload:
-                file_input = gr.File(
-                    label=UI_TEXT["en"]["file_label"],
-                    file_types=[".pdf", ".png", ".jpg", ".jpeg"],
-                )
-                ocr_btn = gr.Button(
-                    UI_TEXT["en"]["ocr_btn"],
-                    variant="primary",
-                    elem_classes="accent-btn",
-                )
+        with gr.Row(equal_height=False):
 
-            with gr.Tab(UI_TEXT["en"]["tab_paste"]) as tab_paste:
-                paste_input = gr.Textbox(
-                    lines=6,
-                    placeholder=UI_TEXT["en"]["paste_placeholder"],
+            # Left: controls ──────────────────────────────────────────────
+            with gr.Column(scale=1):
+                with gr.Tabs():
+                    with gr.Tab(UI_TEXT["en"]["tab_upload"]) as tab_upload:
+                        file_input = gr.File(
+                            label=UI_TEXT["en"]["file_label"],
+                            file_types=[".pdf", ".png", ".jpg", ".jpeg"],
+                        )
+                        ocr_btn = gr.Button(
+                            UI_TEXT["en"]["ocr_btn"],
+                            variant="primary",
+                            elem_classes="accent-btn",
+                        )
+
+                    with gr.Tab(UI_TEXT["en"]["tab_paste"]) as tab_paste:
+                        paste_input = gr.Textbox(
+                            lines=6,
+                            placeholder=UI_TEXT["en"]["paste_placeholder"],
+                            label="",
+                            show_label=False,
+                        )
+                        paste_btn = gr.Button(
+                            UI_TEXT["en"]["paste_btn"],
+                            variant="secondary",
+                        )
+
+                ocr_status = gr.Textbox(
+                    value="",
                     label="",
-                    show_label=False,
+                    interactive=False,
+                    elem_id="status-box",
                 )
-                paste_btn = gr.Button(
-                    UI_TEXT["en"]["paste_btn"],
-                    variant="secondary",
-                )
+                with gr.Accordion(UI_TEXT["en"]["preview_label"], open=False) as preview_acc:
+                    doc_preview = gr.Textbox(
+                        lines=6,
+                        interactive=False,
+                        label="",
+                        elem_id="doc-preview",
+                        show_copy_button=True,
+                    )
 
-        ocr_status = gr.Textbox(
-            value="",
-            label="",
-            interactive=False,
-            elem_id="status-box",
-        )
-        with gr.Accordion(UI_TEXT["en"]["preview_label"], open=False) as preview_acc:
-            doc_preview = gr.Textbox(
-                lines=6,
-                interactive=False,
-                label="",
-                elem_id="doc-preview",
-                show_copy_button=True,
-            )
+            # Right: document viewer ───────────────────────────────────────
+            with gr.Column(scale=1):
+                doc_image = gr.Image(
+                    label="Document viewer",
+                    interactive=False,
+                    show_download_button=False,
+                    show_label=True,
+                    elem_id="doc-viewer",
+                    height=380,
+                )
 
     # ── Step 2: Analyse ───────────────────────────────────────────────────────
     with gr.Group():
@@ -459,6 +509,13 @@ with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
 
     def _chip_click(lang, idx):
         return EXAMPLES.get(lang, EXAMPLES["en"])[idx]
+
+    # Show document preview as soon as a file is selected (no GPU needed)
+    file_input.change(
+        fn=get_doc_preview,
+        inputs=file_input,
+        outputs=doc_image,
+    )
 
     ocr_btn.click(
         fn=_ocr_and_store,
