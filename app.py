@@ -1,20 +1,20 @@
-"""Gradio web interface for the document extraction pipeline.
+"""Gradio web interface — document chat + structured extraction.
 
-Two input modes:
-  - Upload tab: drag-and-drop a PDF or image file
-  - Text tab:   paste raw text directly (useful for quick demos)
+Two modes:
+  - Chat: free-form natural language instructions on the document
+  - Extract: template-based structured JSON output
 
-Models load lazily on first GPU request so the Space starts fast.
+Models load lazily on first GPU request.
 """
 import json
 
-# HF Spaces ships a very recent huggingface_hub that removed HfFolder,
-# but some gradio builds still import it. Patch it back before gradio loads.
+# ── Compatibility patches (must run before importing gradio) ────────────────
+
+# 1. HfFolder was removed from huggingface_hub ≥0.26 but gradio 4.x imports it
 try:
     from huggingface_hub import HfFolder  # noqa: F401
 except ImportError:
-    import huggingface_hub as _hfh
-    import os as _os
+    import huggingface_hub as _hfh, os as _os  # noqa: E401
 
     class _HfFolder:
         @staticmethod
@@ -23,29 +23,49 @@ except ImportError:
 
     _hfh.HfFolder = _HfFolder
 
+# 2. Pydantic v2 generates "additionalProperties": false in JSON schemas,
+#    which gradio 4.x passes as a Python bool to get_type() and crashes.
+try:
+    import gradio_client.utils as _gcu
+    _orig = _gcu._json_schema_to_python_type
+
+    def _safe(schema, defs=None):
+        if not isinstance(schema, dict):
+            return "Any"
+        return _orig(schema, defs)
+
+    _gcu._json_schema_to_python_type = _safe
+except Exception:
+    pass
+
+# ── Imports ─────────────────────────────────────────────────────────────────
 import spaces
 import gradio as gr
 from src.pipeline import DocumentPipeline
 from src.templates import (
     InvoiceTemplate,
-    PersonalFormTemplate,
     ContractTemplate,
     ReceiptTemplate,
+    PersonalFormTemplate,
 )
 
 TEMPLATES = {
     "📄 Invoice": InvoiceTemplate,
-    "📝 Contract / Mission Order": ContractTemplate,
+    "📝 Contract / Mission": ContractTemplate,
     "🧾 Receipt / Expense": ReceiptTemplate,
-    "👤 Personal Form / ID": PersonalFormTemplate,
+    "👤 Personal Form": PersonalFormTemplate,
 }
 
-TEMPLATE_DESCRIPTIONS = {
-    "📄 Invoice": "Invoices, billing documents — extracts vendor, client, amounts, dates.",
-    "📝 Contract / Mission Order": "Service contracts, mission orders — extracts parties, dates, value, terms.",
-    "🧾 Receipt / Expense": "Purchase receipts, expense slips — extracts merchant, total, payment method.",
-    "👤 Personal Form / ID": "Registration forms, KYC — extracts name, DOB, email, address, nationality.",
-}
+EXAMPLES = [
+    "Summarize this document in 3 bullet points.",
+    "Extract all dates and amounts as a JSON object.",
+    "List all parties mentioned with their roles.",
+    "Convert the key information into a markdown table.",
+    "What are the main obligations of each party?",
+    "Extract the payment terms and deadlines.",
+    "Translate the key fields into English.",
+    "What is the total value and how is it broken down?",
+]
 
 _pipeline: DocumentPipeline | None = None
 
@@ -57,119 +77,192 @@ def _get_pipeline() -> DocumentPipeline:
     return _pipeline
 
 
-def update_description(template_name):
-    return TEMPLATE_DESCRIPTIONS.get(template_name, "")
-
-
-@spaces.GPU(duration=120)
-def extract_from_file(file_path, template_name):
-    if file_path is None:
-        return json.dumps({"error": "Please upload a PDF or image file."}, indent=2)
-    path = file_path if isinstance(file_path, str) else str(file_path)
-    try:
-        result = _get_pipeline().process(path, TEMPLATES[template_name])
-        return result.model_dump_json(indent=2)
-    except Exception as e:
-        return json.dumps({"error": str(e)}, indent=2)
-
+# ── GPU functions ────────────────────────────────────────────────────────────
 
 @spaces.GPU(duration=60)
-def extract_from_text(text, template_name):
-    if not text or not text.strip():
-        return json.dumps({"error": "Please enter some document text."}, indent=2)
+def run_ocr(file_path):
+    """Step 1 — Extract raw text from uploaded document."""
+    if file_path is None:
+        return "", "⚠ Please upload a file."
+    path = file_path if isinstance(file_path, str) else str(file_path)
     try:
-        result = _get_pipeline().process_text(text, TEMPLATES[template_name])
+        text = _get_pipeline().ocr_only(path)
+        chars = len(text)
+        return text, f"✓ OCR complete — {chars} characters extracted."
+    except Exception as e:
+        return "", f"✗ OCR error: {e}"
+
+
+@spaces.GPU(duration=90)
+def run_chat(doc_text, instruction):
+    """Step 2 — Answer a free-form instruction on the document text."""
+    if not doc_text or not doc_text.strip():
+        return "⚠ No document text. Run OCR first, or paste text in the Document tab."
+    if not instruction or not instruction.strip():
+        return "⚠ Please enter an instruction."
+    try:
+        return _get_pipeline().chat(doc_text, instruction)
+    except Exception as e:
+        return f"✗ Error: {e}"
+
+
+@spaces.GPU(duration=90)
+def run_extract(doc_text, template_name):
+    """Template-based structured extraction — returns JSON."""
+    if not doc_text or not doc_text.strip():
+        return '{"error": "No document text. Run OCR first, or paste text."}'
+    try:
+        result = _get_pipeline().process_text(doc_text, TEMPLATES[template_name])
         return result.model_dump_json(indent=2)
     except Exception as e:
         return json.dumps({"error": str(e)}, indent=2)
 
 
+def fill_instruction(example):
+    return example
+
+
+# ── UI ───────────────────────────────────────────────────────────────────────
+
 CSS = """
-#title { text-align: center; margin-bottom: 0.25rem; }
-#subtitle { text-align: center; color: #6b7280; margin-bottom: 1.5rem; font-size: 0.95rem; }
-#stack { font-size: 0.85rem; text-align: center; color: #9ca3af; margin-bottom: 1.5rem; }
-#extract-btn { background: #f97316 !important; border: none !important; }
-#extract-btn:hover { background: #ea6c0a !important; }
-#template-desc { font-size: 0.85rem; color: #6b7280; padding: 0.25rem 0; min-height: 1.5rem; }
-#output-box textarea { font-family: monospace; font-size: 0.85rem; }
-.footer { text-align: center; font-size: 0.8rem; color: #9ca3af; margin-top: 1rem; }
+#title { text-align:center; margin-bottom:.1rem; }
+#subtitle { text-align:center; color:#6b7280; font-size:.95rem; margin-bottom:1.5rem; }
+#stack-row { text-align:center; font-size:.8rem; color:#9ca3af; margin-bottom:1.5rem; }
+.primary-btn { background:#f97316 !important; border:none !important; }
+.primary-btn:hover { background:#ea6c0a !important; }
+#status-box textarea { font-size:.85rem; color:#6b7280; }
+#doc-preview textarea { font-family: monospace; font-size:.82rem; }
+#output-area textarea { font-size:.88rem; }
+.example-chip button { font-size:.8rem !important; padding:.2rem .6rem !important; }
+.footer-txt { text-align:center; font-size:.78rem; color:#9ca3af; margin-top:1rem; }
 """
 
-with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Extraction Pipeline") as demo:
+with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Chat") as demo:
 
-    gr.Markdown("# Document Extraction Pipeline", elem_id="title")
+    doc_state = gr.State("")  # stores extracted text across interactions
+
+    gr.Markdown("# Document Chat", elem_id="title")
     gr.Markdown(
-        "Extract structured data from any document — PDF or image — using free HuggingFace models. No API key required.",
+        "Talk to your document — extract, structure, summarize, translate, or export in any format.",
         elem_id="subtitle",
     )
     gr.Markdown(
-        "**OCR:** doctr (db_resnet50 · crnn_vgg16_bn) &nbsp;·&nbsp; **LLM:** Qwen2.5-1.5B-Instruct &nbsp;·&nbsp; **Validation:** Pydantic v2",
-        elem_id="stack",
+        "**OCR:** doctr &nbsp;·&nbsp; **LLM:** Qwen2.5-1.5B-Instruct &nbsp;·&nbsp; **Validation:** Pydantic v2 &nbsp;·&nbsp; Runs on ZeroGPU (free)",
+        elem_id="stack-row",
     )
 
     with gr.Row():
-        with gr.Column(scale=1):
-            template_selector = gr.Dropdown(
-                choices=list(TEMPLATES.keys()),
-                value="📄 Invoice",
-                label="Document type",
-            )
-            template_desc = gr.Markdown("", elem_id="template-desc")
-            template_selector.change(
-                fn=update_description,
-                inputs=template_selector,
-                outputs=template_desc,
-            )
-            # Show initial description
-            demo.load(
-                fn=lambda: update_description("📄 Invoice"),
-                outputs=template_desc,
-            )
 
+        # ── Left: document input ────────────────────────────────────────────
         with gr.Column(scale=2):
             with gr.Tabs():
-                with gr.Tab("📎 Upload document"):
-                    gr.Markdown("Drop a **PDF or image** (PNG, JPG). OCR runs automatically.")
+                with gr.Tab("📎 Upload file"):
                     file_input = gr.File(
-                        label="Document",
+                        label="PDF or image (PNG, JPG)",
                         file_types=[".pdf", ".png", ".jpg", ".jpeg"],
                     )
-                    file_btn = gr.Button("Extract →", variant="primary", elem_id="extract-btn")
-                    file_output = gr.Textbox(
-                        label="Extracted fields (JSON)",
-                        lines=18,
-                        show_copy_button=True,
-                        elem_id="output-box",
-                    )
-                    file_btn.click(
-                        fn=extract_from_file,
-                        inputs=[file_input, template_selector],
-                        outputs=file_output,
+                    ocr_btn = gr.Button("① Extract text (OCR)", variant="primary", elem_classes="primary-btn")
+                    ocr_status = gr.Textbox(
+                        label="", lines=1, interactive=False, elem_id="status-box"
                     )
 
                 with gr.Tab("✏️ Paste text"):
-                    gr.Markdown("Paste document text directly — skips OCR, faster for quick tests.")
-                    text_input = gr.Textbox(
-                        lines=10,
-                        placeholder="Invoice Number: INV-2024-0042\nDate: 2024-11-15\nVendor: Acme Corp\nTotal Due: 8160.00 EUR\n...",
+                    paste_input = gr.Textbox(
+                        lines=12,
+                        placeholder="Paste document text here...",
                         label="Document text",
                     )
-                    text_btn = gr.Button("Extract →", variant="primary", elem_id="extract-btn")
-                    text_output = gr.Textbox(
-                        label="Extracted fields (JSON)",
-                        lines=12,
-                        show_copy_button=True,
-                        elem_id="output-box",
+                    paste_btn = gr.Button("Use this text →", variant="secondary")
+
+            with gr.Accordion("📄 Extracted text preview", open=False):
+                doc_preview = gr.Textbox(
+                    lines=8,
+                    interactive=False,
+                    label="",
+                    elem_id="doc-preview",
+                    show_copy_button=True,
+                )
+
+        # ── Right: interact ─────────────────────────────────────────────────
+        with gr.Column(scale=3):
+            with gr.Tabs():
+
+                with gr.Tab("💬 Chat (free-form)"):
+                    instruction_input = gr.Textbox(
+                        lines=3,
+                        placeholder='e.g. "Summarize in 3 bullet points" · "Extract all amounts as JSON" · "Convert to markdown table" · "List all parties"',
+                        label="Your instruction",
                     )
-                    text_btn.click(
-                        fn=extract_from_text,
-                        inputs=[text_input, template_selector],
-                        outputs=text_output,
+                    gr.Markdown("**Quick examples — click to use:**")
+                    with gr.Row(elem_classes="example-chip"):
+                        for ex in EXAMPLES[:4]:
+                            gr.Button(ex, size="sm").click(
+                                fn=lambda e=ex: e,
+                                outputs=instruction_input,
+                            )
+                    with gr.Row(elem_classes="example-chip"):
+                        for ex in EXAMPLES[4:]:
+                            gr.Button(ex, size="sm").click(
+                                fn=lambda e=ex: e,
+                                outputs=instruction_input,
+                            )
+                    chat_btn = gr.Button("② Process instruction", variant="primary", elem_classes="primary-btn")
+                    chat_output = gr.Textbox(
+                        lines=14,
+                        label="Response",
+                        show_copy_button=True,
+                        elem_id="output-area",
+                    )
+                    chat_btn.click(
+                        fn=run_chat,
+                        inputs=[doc_state, instruction_input],
+                        outputs=chat_output,
+                    )
+
+                with gr.Tab("🗂 Extract (structured JSON)"):
+                    template_selector = gr.Dropdown(
+                        choices=list(TEMPLATES.keys()),
+                        value="📄 Invoice",
+                        label="Document type",
+                    )
+                    extract_btn = gr.Button("② Extract fields", variant="primary", elem_classes="primary-btn")
+                    extract_output = gr.Textbox(
+                        lines=14,
+                        label="Extracted fields (JSON)",
+                        show_copy_button=True,
+                        elem_id="output-area",
+                    )
+                    extract_btn.click(
+                        fn=run_extract,
+                        inputs=[doc_state, template_selector],
+                        outputs=extract_output,
                     )
 
     gr.Markdown(
-        '<div class="footer">First request takes ~2 min while models load · '
+        '<div class="footer-txt">First request takes ~2 min while models load on ZeroGPU · '
         '<a href="https://github.com/MKSANE981/document-extraction-pipeline">GitHub</a></div>'
+    )
+
+    # ── Wiring ───────────────────────────────────────────────────────────────
+    def _ocr_and_store(file_path):
+        text, status = run_ocr(file_path)
+        return text, text, status
+
+    ocr_btn.click(
+        fn=_ocr_and_store,
+        inputs=file_input,
+        outputs=[doc_state, doc_preview, ocr_status],
+    )
+
+    def _paste_and_store(text):
+        if not text or not text.strip():
+            return "", "", "⚠ Please enter some text."
+        return text, text, f"✓ {len(text)} characters loaded."
+
+    paste_btn.click(
+        fn=_paste_and_store,
+        inputs=paste_input,
+        outputs=[doc_state, doc_preview, ocr_status],
     )
 
 if __name__ == "__main__":

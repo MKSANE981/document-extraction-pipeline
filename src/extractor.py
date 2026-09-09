@@ -61,6 +61,17 @@ class StructuredExtractor:
         raw_json = self._parse_json(output, prompt)
         return template.model_validate(raw_json)
 
+    def chat(self, text: str, instruction: str) -> str:
+        """Answer a free-form instruction about the document text."""
+        prompt = (
+            "You are a document analysis assistant. "
+            "Answer the instruction based solely on the document below.\n\n"
+            f"Document:\n\"\"\"\n{text[:3000]}\n\"\"\"\n\n"
+            f"Instruction: {instruction}\n\nAnswer:"
+        )
+        output = self.pipe(prompt)[0]["generated_text"]
+        return output[len(prompt):].strip() or "No response generated."
+
     def _parse_json(self, output: str, prompt: str) -> dict:
         # Strip the prompt echo if the model repeats it
         generated = output[len(prompt):].strip()

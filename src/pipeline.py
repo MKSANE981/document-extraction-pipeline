@@ -43,3 +43,16 @@ class DocumentPipeline:
     def process_text(self, text: str, template: Type[T]) -> T:
         """Skip OCR and extract directly from pre-existing text (useful for testing)."""
         return self.extractor.extract(text, template)
+
+    def ocr_only(self, file_path: str | Path) -> str:
+        """Run OCR and return raw text without extraction."""
+        return self.ocr.extract_text(file_path)
+
+    def chat(self, text: str, instruction: str) -> str:
+        """Answer a free-form instruction on document text."""
+        return self.extractor.chat(text, instruction)
+
+    def chat_file(self, file_path: str | Path, instruction: str) -> str:
+        """OCR a document then answer a free-form instruction."""
+        text = self.ocr.extract_text(file_path)
+        return self.extractor.chat(text, instruction)
