@@ -1,3 +1,14 @@
+---
+title: Document Extraction Pipeline
+emoji: 📄
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+---
+
 # Document Extraction Pipeline
 
 A lightweight, modular pipeline for extracting structured data from documents (PDF, images) using free, open-source HuggingFace models — no paid API required.
