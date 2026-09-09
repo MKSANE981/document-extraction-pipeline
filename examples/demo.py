@@ -1,5 +1,8 @@
 """Quick demo: extract structured data from a document using a custom template."""
+import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from pydantic import Field
 from typing import Optional
 
