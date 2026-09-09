@@ -26,11 +26,13 @@ def _get_pipeline() -> DocumentPipeline:
     return _pipeline
 
 
-def extract_from_file(file_path: str | None, template_name: str) -> str:
+def extract_from_file(file_path, template_name: str) -> str:
     if file_path is None:
         return json.dumps({"error": "Please upload a PDF or image file."}, indent=2)
+    # Gradio 5 passes the filepath directly as a string
+    path = file_path if isinstance(file_path, str) else str(file_path)
     try:
-        result = _get_pipeline().process(file_path, TEMPLATES[template_name])
+        result = _get_pipeline().process(path, TEMPLATES[template_name])
         return result.model_dump_json(indent=2)
     except Exception as e:
         return json.dumps({"error": str(e)}, indent=2)
