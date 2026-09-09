@@ -36,20 +36,37 @@ Document text:
 Return only the JSON object, no explanation."""
 
 
+FALLBACK_MODELS = [
+    "Qwen/Qwen2.5-1.5B-Instruct",
+    "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "microsoft/phi-2",
+]
+
+
 class StructuredExtractor:
     """Extract structured data from OCR text using a small HuggingFace LLM.
 
-    Uses a text-generation pipeline with any instruction-following model.
-    Defaults to Qwen2.5-1.5B-Instruct (free, runs on CPU).
+    Tries FALLBACK_MODELS in order until one loads successfully.
+    Defaults to Qwen2.5-1.5B-Instruct; falls back to TinyLlama, then Phi-2.
     """
 
     def __init__(self, model_name: str = "Qwen/Qwen2.5-1.5B-Instruct"):
-        self.pipe = pipeline(
-            "text-generation",
-            model=model_name,
-            max_new_tokens=512,
-            do_sample=False,
-        )
+        models_to_try = [model_name] + [m for m in FALLBACK_MODELS if m != model_name]
+        last_error = None
+        for model in models_to_try:
+            try:
+                self.pipe = pipeline(
+                    "text-generation",
+                    model=model,
+                    max_new_tokens=512,
+                    do_sample=False,
+                )
+                self.model_name = model
+                return
+            except Exception as e:
+                last_error = e
+                continue
+        raise RuntimeError(f"All models failed to load. Last error: {last_error}")
 
     def extract(self, text: str, template: Type[T]) -> T:
         """Extract fields defined in `template` from raw OCR text."""
