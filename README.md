@@ -9,11 +9,26 @@ app_file: app.py
 pinned: false
 ---
 
-# Document Extraction Pipeline
+# Document Chat & Extraction Pipeline
 
-A lightweight, modular pipeline for extracting structured data from documents (PDF, images) using free, open-source HuggingFace models — no paid API required.
+Talk to your documents. Upload a PDF or image, then ask anything in plain language — summarize, extract, restructure, translate, or export in any format. All models run free from HuggingFace, no API key required.
 
-The pipeline combines an OCR engine to read document text with a small language model to extract fields defined by a user-supplied Pydantic template. This makes it easy to adapt to any document type (invoices, forms, contracts, reports) by simply changing the template.
+🚀 **[Live demo on HuggingFace Spaces](https://huggingface.co/spaces/mansourkama/document-extraction-pipeline)**
+
+---
+
+## What you can do
+
+| Instruction example | What you get |
+|---|---|
+| "Summarize in 3 bullet points" | Concise summary |
+| "Extract all dates and amounts as JSON" | Structured JSON object |
+| "List all parties and their roles" | Named entity list |
+| "Convert to a markdown table" | Formatted table |
+| "What are the payment terms?" | Direct answer |
+| "Translate the key fields to English" | Translated output |
+
+Plus template-based structured extraction (Invoice, Contract, Receipt, Personal Form) that returns a validated Pydantic model.
 
 ---
 
@@ -25,19 +40,15 @@ Document (PDF or image)
         ▼
 ┌───────────────┐
 │  OCR Engine   │   doctr — db_resnet50 (detection) + crnn_vgg16_bn (recognition)
-│  (src/ocr.py) │   Pretrained weights loaded automatically from HuggingFace
+│  (src/ocr.py) │   Pretrained weights from HuggingFace, no account needed
 └───────┬───────┘
         │  raw text
         ▼
-┌─────────────────────┐
-│  Structured         │   Qwen2.5-1.5B-Instruct (HuggingFace)
-│  Extractor          │   Prompted with the Pydantic schema → returns JSON
-│  (src/extractor.py) │   Parsed and validated into the target template
-└─────────┬───────────┘
-          │  populated Pydantic model
-          ▼
-     Your template
-  (InvoiceTemplate, PersonalFormTemplate, or your own)
+┌──────────────────────┐
+│  LLM                 │   Qwen2.5-1.5B-Instruct (HuggingFace)
+│  (src/extractor.py)  │   ├─ chat()    — free-form instruction → any output format
+│                      │   └─ extract() — schema-guided → validated Pydantic model
+└──────────────────────┘
 ```
 
 ---
@@ -48,27 +59,22 @@ Document (PDF or image)
 document-extraction-pipeline/
 │
 ├── src/
-│   ├── __init__.py              # Public API exports
-│   ├── ocr.py                   # OCR engine wrapper (doctr)
-│   ├── extractor.py             # LLM-based structured extraction
-│   ├── pipeline.py              # Main pipeline combining OCR + extraction
+│   ├── ocr.py                   # OCR engine (doctr)
+│   ├── extractor.py             # LLM: chat() + extract() methods
+│   ├── pipeline.py              # Orchestrates OCR + LLM; exposes chat_file(), process()
 │   └── templates/
-│       ├── __init__.py          # Template exports
-│       ├── base.py              # ExtractionTemplate base class
-│       ├── invoice.py           # Invoice / billing document template
-│       └── form.py              # Personal information form template
+│       ├── base.py              # ExtractionTemplate base class (schema_prompt + type coercion)
+│       ├── invoice.py           # Invoice / billing
+│       ├── contract.py          # Contract / mission order
+│       ├── receipt.py           # Receipt / expense
+│       └── form.py              # Personal information form
 │
+├── app.py                       # Gradio web interface (HuggingFace Spaces)
 ├── tests/
-│   ├── fixtures/
-│   │   └── generate_fixtures.py # Generates synthetic test images with Pillow
-│   └── test_pipeline.py         # Unit and integration tests
-│
-├── examples/
-│   └── demo.py                  # Runnable demo with built-in and custom templates
-│
-├── requirements.txt
-├── .gitignore
-└── README.md
+│   ├── fixtures/generate_fixtures.py   # Synthetic test images (Pillow)
+│   └── test_pipeline.py               # Unit + integration tests
+├── examples/demo.py             # CLI demo
+└── requirements.txt
 ```
 
 ---
@@ -79,55 +85,39 @@ document-extraction-pipeline/
 pip install -r requirements.txt
 ```
 
+**Free-form chat:**
+```python
+from src.pipeline import DocumentPipeline
+
+pipeline = DocumentPipeline()
+
+# From a file (OCR + LLM)
+response = pipeline.chat_file("contract.pdf", "List all parties and the total value.")
+print(response)
+
+# From text (LLM only)
+response = pipeline.chat(my_text, "Convert to a markdown table.")
+print(response)
+```
+
+**Structured extraction:**
 ```python
 from src.pipeline import DocumentPipeline
 from src.templates import InvoiceTemplate
 
 pipeline = DocumentPipeline()
-
-# From a PDF or image file
-result = pipeline.process("my_invoice.pdf", InvoiceTemplate)
+result = pipeline.process("invoice.pdf", InvoiceTemplate)
 print(result.model_dump_json(indent=2))
 ```
 
-**Example output:**
 ```json
 {
   "invoice_number": "INV-2024-0042",
   "date": "2024-11-15",
   "vendor_name": "TechSolutions SARL",
-  "client_name": "GlobalCorp Inc.",
-  "subtotal": 6800.0,
-  "tax_amount": 1360.0,
   "total_amount": 8160.0,
-  "currency": "EUR",
-  "due_date": "2024-12-15"
+  "currency": "EUR"
 }
-```
-
----
-
-## Define Your Own Template
-
-The pipeline is template-agnostic. Define a Pydantic model that inherits from `ExtractionTemplate` — field descriptions are injected into the LLM prompt as extraction hints.
-
-```python
-from pydantic import Field
-from typing import Optional
-from src.templates.base import ExtractionTemplate
-from src.pipeline import DocumentPipeline
-
-class ContractTemplate(ExtractionTemplate):
-    parties: Optional[str] = Field(None, description="Names of the contracting parties")
-    start_date: Optional[str] = Field(None, description="Contract start date (YYYY-MM-DD)")
-    end_date: Optional[str] = Field(None, description="Contract end date (YYYY-MM-DD)")
-    value: Optional[float] = Field(None, description="Total contract value")
-    currency: Optional[str] = Field(None, description="Currency code")
-    jurisdiction: Optional[str] = Field(None, description="Governing law or jurisdiction")
-
-pipeline = DocumentPipeline()
-result = pipeline.process("contract.pdf", ContractTemplate)
-print(result.model_dump_json(indent=2))
 ```
 
 ---
@@ -137,16 +127,23 @@ print(result.model_dump_json(indent=2))
 | Template | Document type | Key fields |
 |---|---|---|
 | `InvoiceTemplate` | Invoices, billing | invoice_number, date, vendor, client, subtotal, tax, total, currency, due_date |
-| `PersonalFormTemplate` | Registration forms | full_name, date_of_birth, email, phone, address, nationality, occupation |
+| `ContractTemplate` | Contracts, mission orders | parties, mission_description, start_date, end_date, total_value, payment_terms |
+| `ReceiptTemplate` | Receipts, expense slips | merchant, date, total, currency, payment_method, items |
+| `PersonalFormTemplate` | Registration, KYC forms | full_name, date_of_birth, email, phone, address, nationality, occupation |
 
----
+**Custom template:**
+```python
+from pydantic import Field
+from typing import Optional
+from src.templates.base import ExtractionTemplate
 
-## Generate Test Fixtures
+class MedicalReportTemplate(ExtractionTemplate):
+    patient_name: Optional[str] = Field(None, description="Patient full name")
+    diagnosis: Optional[str] = Field(None, description="Main diagnosis")
+    physician: Optional[str] = Field(None, description="Treating physician name")
+    date: Optional[str] = Field(None, description="Report date")
 
-Synthetic test documents (invoice and form images) are generated programmatically using Pillow — no real documents needed.
-
-```bash
-python tests/fixtures/generate_fixtures.py
+result = pipeline.process("report.pdf", MedicalReportTemplate)
 ```
 
 ---
@@ -154,34 +151,30 @@ python tests/fixtures/generate_fixtures.py
 ## Run Tests
 
 ```bash
-pytest tests/
+python tests/fixtures/generate_fixtures.py   # generate synthetic test images
+pytest tests/ -v
 ```
-
-Text-based tests run without OCR or LLM (fast). Image-based tests require fixtures to be generated first.
 
 ---
 
 ## Configuration
 
-The pipeline accepts optional arguments to swap models:
-
 ```python
 pipeline = DocumentPipeline(
-    ocr_det_arch="db_resnet50",          # doctr detection model
-    ocr_reco_arch="crnn_vgg16_bn",       # doctr recognition model
-    llm_model="Qwen/Qwen2.5-1.5B-Instruct",  # any HuggingFace text-gen model
+    ocr_det_arch="db_resnet50",
+    ocr_reco_arch="crnn_vgg16_bn",
+    llm_model="Qwen/Qwen2.5-1.5B-Instruct",   # swap for any HF text-gen model
 )
 ```
-
-To use a larger model for better extraction quality, replace `llm_model` with any instruction-following model available on HuggingFace (e.g. `mistralai/Mistral-7B-Instruct-v0.3`).
 
 ---
 
 ## Stack
 
-| Component | Library | Source |
-|---|---|---|
-| Document OCR | [doctr](https://github.com/mindee/doctr) | HuggingFace pretrained |
-| Language model | [Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) | HuggingFace pretrained |
-| Schema validation | [Pydantic v2](https://docs.pydantic.dev/) | — |
-| Test fixtures | [Pillow](https://python-pillow.org/) | Synthetic generation |
+| Component | Library |
+|---|---|
+| Document OCR | [doctr](https://github.com/mindee/doctr) (HuggingFace pretrained) |
+| Language model | [Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) |
+| Schema validation | [Pydantic v2](https://docs.pydantic.dev/) |
+| Web interface | [Gradio](https://gradio.app/) · deployed on [HuggingFace Spaces](https://huggingface.co/spaces/mansourkama/document-extraction-pipeline) |
+| Test fixtures | [Pillow](https://python-pillow.org/) |
