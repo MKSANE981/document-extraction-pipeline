@@ -11,3 +11,4 @@ venv/
 *.safetensors
 .pytest_cache/
 .DS_Store
+DEVLOG.md
