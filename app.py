@@ -4,7 +4,7 @@ Two input modes:
   - Upload tab: drag-and-drop a PDF or image file
   - Text tab:   paste raw text directly (useful for quick demos)
 
-Models load lazily on first request so the Space starts fast.
+Models load lazily on first GPU request so the Space starts fast.
 """
 import json
 
@@ -26,11 +26,25 @@ except ImportError:
 import spaces
 import gradio as gr
 from src.pipeline import DocumentPipeline
-from src.templates import InvoiceTemplate, PersonalFormTemplate
+from src.templates import (
+    InvoiceTemplate,
+    PersonalFormTemplate,
+    ContractTemplate,
+    ReceiptTemplate,
+)
 
 TEMPLATES = {
-    "Invoice": InvoiceTemplate,
-    "Personal Form": PersonalFormTemplate,
+    "📄 Invoice": InvoiceTemplate,
+    "📝 Contract / Mission Order": ContractTemplate,
+    "🧾 Receipt / Expense": ReceiptTemplate,
+    "👤 Personal Form / ID": PersonalFormTemplate,
+}
+
+TEMPLATE_DESCRIPTIONS = {
+    "📄 Invoice": "Invoices, billing documents — extracts vendor, client, amounts, dates.",
+    "📝 Contract / Mission Order": "Service contracts, mission orders — extracts parties, dates, value, terms.",
+    "🧾 Receipt / Expense": "Purchase receipts, expense slips — extracts merchant, total, payment method.",
+    "👤 Personal Form / ID": "Registration forms, KYC — extracts name, DOB, email, address, nationality.",
 }
 
 _pipeline: DocumentPipeline | None = None
@@ -43,8 +57,12 @@ def _get_pipeline() -> DocumentPipeline:
     return _pipeline
 
 
+def update_description(template_name):
+    return TEMPLATE_DESCRIPTIONS.get(template_name, "")
+
+
 @spaces.GPU(duration=120)
-def extract_from_file(file_path, template_name: str) -> str:
+def extract_from_file(file_path, template_name):
     if file_path is None:
         return json.dumps({"error": "Please upload a PDF or image file."}, indent=2)
     path = file_path if isinstance(file_path, str) else str(file_path)
@@ -56,9 +74,9 @@ def extract_from_file(file_path, template_name: str) -> str:
 
 
 @spaces.GPU(duration=60)
-def extract_from_text(text: str, template_name: str) -> str:
-    if not text.strip():
-        return json.dumps({"error": "Please enter some text."}, indent=2)
+def extract_from_text(text, template_name):
+    if not text or not text.strip():
+        return json.dumps({"error": "Please enter some document text."}, indent=2)
     try:
         result = _get_pipeline().process_text(text, TEMPLATES[template_name])
         return result.model_dump_json(indent=2)
@@ -66,60 +84,92 @@ def extract_from_text(text: str, template_name: str) -> str:
         return json.dumps({"error": str(e)}, indent=2)
 
 
-with gr.Blocks(title="Document Extraction Pipeline") as demo:
-    gr.Markdown(
-        """
-        # Document Extraction Pipeline
-        Extract structured data from documents using free HuggingFace models —
-        no API key required.
+CSS = """
+#title { text-align: center; margin-bottom: 0.25rem; }
+#subtitle { text-align: center; color: #6b7280; margin-bottom: 1.5rem; font-size: 0.95rem; }
+#stack { font-size: 0.85rem; text-align: center; color: #9ca3af; margin-bottom: 1.5rem; }
+#extract-btn { background: #f97316 !important; border: none !important; }
+#extract-btn:hover { background: #ea6c0a !important; }
+#template-desc { font-size: 0.85rem; color: #6b7280; padding: 0.25rem 0; min-height: 1.5rem; }
+#output-box textarea { font-family: monospace; font-size: 0.85rem; }
+.footer { text-align: center; font-size: 0.8rem; color: #9ca3af; margin-top: 1rem; }
+"""
 
-        **OCR:** doctr (db_resnet50 + crnn_vgg16_bn) &nbsp;|&nbsp;
-        **LLM:** Qwen2.5-1.5B-Instruct &nbsp;|&nbsp;
-        **Validation:** Pydantic v2
-        """
+with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Document Extraction Pipeline") as demo:
+
+    gr.Markdown("# Document Extraction Pipeline", elem_id="title")
+    gr.Markdown(
+        "Extract structured data from any document — PDF or image — using free HuggingFace models. No API key required.",
+        elem_id="subtitle",
+    )
+    gr.Markdown(
+        "**OCR:** doctr (db_resnet50 · crnn_vgg16_bn) &nbsp;·&nbsp; **LLM:** Qwen2.5-1.5B-Instruct &nbsp;·&nbsp; **Validation:** Pydantic v2",
+        elem_id="stack",
     )
 
-    template_selector = gr.Dropdown(
-        choices=list(TEMPLATES.keys()),
-        value="Invoice",
-        label="Template",
-    )
-
-    with gr.Tabs():
-        with gr.Tab("Upload document"):
-            gr.Markdown("Upload a **PDF or image** (PNG, JPG). OCR runs automatically.")
-            file_input = gr.File(label="Document", file_types=[".pdf", ".png", ".jpg", ".jpeg"])
-            file_btn = gr.Button("Extract", variant="primary")
-            file_output = gr.Code(language="json", label="Extracted fields")
-            file_btn.click(
-                fn=extract_from_file,
-                inputs=[file_input, template_selector],
-                outputs=file_output,
+    with gr.Row():
+        with gr.Column(scale=1):
+            template_selector = gr.Dropdown(
+                choices=list(TEMPLATES.keys()),
+                value="📄 Invoice",
+                label="Document type",
+            )
+            template_desc = gr.Markdown("", elem_id="template-desc")
+            template_selector.change(
+                fn=update_description,
+                inputs=template_selector,
+                outputs=template_desc,
+            )
+            # Show initial description
+            demo.load(
+                fn=lambda: update_description("📄 Invoice"),
+                outputs=template_desc,
             )
 
-        with gr.Tab("Paste text"):
-            gr.Markdown("Paste the document text directly — skips OCR, runs faster.")
-            text_input = gr.Textbox(
-                lines=10,
-                placeholder="Invoice Number: INV-2024-0042\nDate: 2024-11-15\nVendor: Acme Corp\nTotal Due: 8160.00 EUR\n...",
-                label="Document text",
-            )
-            text_btn = gr.Button("Extract", variant="primary")
-            text_output = gr.Code(language="json", label="Extracted fields")
-            text_btn.click(
-                fn=extract_from_text,
-                inputs=[text_input, template_selector],
-                outputs=text_output,
-            )
+        with gr.Column(scale=2):
+            with gr.Tabs():
+                with gr.Tab("📎 Upload document"):
+                    gr.Markdown("Drop a **PDF or image** (PNG, JPG). OCR runs automatically.")
+                    file_input = gr.File(
+                        label="Document",
+                        file_types=[".pdf", ".png", ".jpg", ".jpeg"],
+                    )
+                    file_btn = gr.Button("Extract →", variant="primary", elem_id="extract-btn")
+                    file_output = gr.Textbox(
+                        label="Extracted fields (JSON)",
+                        lines=18,
+                        show_copy_button=True,
+                        elem_id="output-box",
+                    )
+                    file_btn.click(
+                        fn=extract_from_file,
+                        inputs=[file_input, template_selector],
+                        outputs=file_output,
+                    )
+
+                with gr.Tab("✏️ Paste text"):
+                    gr.Markdown("Paste document text directly — skips OCR, faster for quick tests.")
+                    text_input = gr.Textbox(
+                        lines=10,
+                        placeholder="Invoice Number: INV-2024-0042\nDate: 2024-11-15\nVendor: Acme Corp\nTotal Due: 8160.00 EUR\n...",
+                        label="Document text",
+                    )
+                    text_btn = gr.Button("Extract →", variant="primary", elem_id="extract-btn")
+                    text_output = gr.Textbox(
+                        label="Extracted fields (JSON)",
+                        lines=12,
+                        show_copy_button=True,
+                        elem_id="output-box",
+                    )
+                    text_btn.click(
+                        fn=extract_from_text,
+                        inputs=[text_input, template_selector],
+                        outputs=text_output,
+                    )
 
     gr.Markdown(
-        """
-        ---
-        **Note:** First request takes ~2 minutes while models load.
-        Subsequent requests are fast (models stay in memory).
-
-        [GitHub](https://github.com/MKSANE981/document-extraction-pipeline)
-        """
+        '<div class="footer">First request takes ~2 min while models load · '
+        '<a href="https://github.com/MKSANE981/document-extraction-pipeline">GitHub</a></div>'
     )
 
 if __name__ == "__main__":
