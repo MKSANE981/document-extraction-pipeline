@@ -7,6 +7,22 @@ Two input modes:
 Models load lazily on first request so the Space starts fast.
 """
 import json
+
+# HF Spaces ships a very recent huggingface_hub that removed HfFolder,
+# but some gradio builds still import it. Patch it back before gradio loads.
+try:
+    from huggingface_hub import HfFolder  # noqa: F401
+except ImportError:
+    import huggingface_hub as _hfh
+    import os as _os
+
+    class _HfFolder:
+        @staticmethod
+        def get_token():
+            return _os.environ.get("HF_TOKEN")
+
+    _hfh.HfFolder = _HfFolder
+
 import gradio as gr
 from src.pipeline import DocumentPipeline
 from src.templates import InvoiceTemplate, PersonalFormTemplate
