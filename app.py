@@ -23,6 +23,7 @@ except ImportError:
 
     _hfh.HfFolder = _HfFolder
 
+import spaces
 import gradio as gr
 from src.pipeline import DocumentPipeline
 from src.templates import InvoiceTemplate, PersonalFormTemplate
@@ -42,10 +43,10 @@ def _get_pipeline() -> DocumentPipeline:
     return _pipeline
 
 
+@spaces.GPU(duration=120)
 def extract_from_file(file_path, template_name: str) -> str:
     if file_path is None:
         return json.dumps({"error": "Please upload a PDF or image file."}, indent=2)
-    # Gradio 5 passes the filepath directly as a string
     path = file_path if isinstance(file_path, str) else str(file_path)
     try:
         result = _get_pipeline().process(path, TEMPLATES[template_name])
@@ -54,6 +55,7 @@ def extract_from_file(file_path, template_name: str) -> str:
         return json.dumps({"error": str(e)}, indent=2)
 
 
+@spaces.GPU(duration=60)
 def extract_from_text(text: str, template_name: str) -> str:
     if not text.strip():
         return json.dumps({"error": "Please enter some text."}, indent=2)
