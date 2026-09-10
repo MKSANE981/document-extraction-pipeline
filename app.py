@@ -35,7 +35,7 @@ TEMPLATES = {
     "👤 Personal Form": PersonalFormTemplate,
 }
 
-EXAMPLES = {
+FALLBACK_SUGGESTIONS = {
     "en": [
         "Summarize in 3 bullet points.",
         "Extract all dates and amounts as JSON.",
@@ -152,17 +152,31 @@ def get_doc_preview(file_path):
             return []
     return []
 
-@spaces.GPU(duration=60)
-def run_ocr(file_path, lang):
+def _fallback_chips(lang):
+    suggestions = FALLBACK_SUGGESTIONS.get(lang, FALLBACK_SUGGESTIONS["en"])
+    return [gr.update(value=s) for s in suggestions[:8]]
+
+@spaces.GPU(duration=90)
+def run_ocr_and_analyze(file_path, lang):
+    """OCR the document then immediately analyze its type and generate suggestions."""
     t = UI.get(lang, UI["en"])
     if file_path is None:
-        return "", t["no_file"]
+        return "", "", t["no_file"], *_fallback_chips(lang)
     path = file_path if isinstance(file_path, str) else str(file_path)
     try:
         text = _get_pipeline().ocr_only(path)
-        return text, t["ok_ocr"].format(n=len(text))
+        analysis = _get_pipeline().analyze_and_suggest(text, lang)
+        doc_type = analysis.get("doc_type", "Document")
+        suggestions = analysis.get("suggestions", FALLBACK_SUGGESTIONS.get(lang, FALLBACK_SUGGESTIONS["en"]))
+        # pad to 8
+        base = FALLBACK_SUGGESTIONS.get(lang, FALLBACK_SUGGESTIONS["en"])
+        while len(suggestions) < 8:
+            suggestions.append(base[len(suggestions) % len(base)])
+        chip_updates = [gr.update(value=str(s)) for s in suggestions[:8]]
+        status = t["ok_ocr"].format(n=len(text)) + f" · {doc_type}"
+        return text, text, status, *chip_updates
     except Exception as e:
-        return "", t["err_ocr"].format(e=e)
+        return "", "", t["err_ocr"].format(e=e), *_fallback_chips(lang)
 
 @spaces.GPU(duration=90)
 def run_chat(doc_text, instruction, lang):
@@ -528,10 +542,6 @@ with gr.Blocks(
                             label=UI["en"]["file_label"],
                             file_types=[".pdf", ".png", ".jpg", ".jpeg"],
                         )
-                        ocr_btn = gr.Button(
-                            UI["en"]["ocr_btn"],
-                            variant="primary", elem_classes="go-btn",
-                        )
                     with gr.Tab(UI["en"]["tab_paste"]):
                         paste_input = gr.Textbox(
                             lines=5, placeholder=UI["en"]["paste_ph"],
@@ -568,11 +578,11 @@ with gr.Blocks(
                         chips = []
                         with gr.Row(elem_classes="chip-row"):
                             for i in range(4):
-                                b = gr.Button(EXAMPLES["en"][i], size="sm", elem_classes="chip")
+                                b = gr.Button(FALLBACK_SUGGESTIONS["en"][i], size="sm", elem_classes="chip")
                                 chips.append(b)
                         with gr.Row(elem_classes="chip-row"):
                             for i in range(4, 8):
-                                b = gr.Button(EXAMPLES["en"][i], size="sm", elem_classes="chip")
+                                b = gr.Button(FALLBACK_SUGGESTIONS["en"][i], size="sm", elem_classes="chip")
                                 chips.append(b)
                         chat_btn = gr.Button(
                             UI["en"]["chat_btn"], variant="primary", elem_classes="go-btn"
@@ -609,46 +619,61 @@ with gr.Blocks(
 
     gr.HTML(
         '<div id="footer">'
-        'OCR · <b>doctr</b> &ensp;LLM · <b>Qwen2.5-1.5B</b> + fallbacks &ensp;GPU · <b>ZeroGPU</b>'
+        'OCR · <b>doctr</b> &ensp;LLM · <b>Qwen2.5-3B</b> + fallbacks &ensp;GPU · <b>ZeroGPU</b>'
         '&ensp;<a href="https://github.com/mansourkama/document-extraction-pipeline">GitHub ↗</a>'
         '</div>'
     )
 
     # ── Wiring ────────────────────────────────────────────────────────────────
 
-    file_input.change(fn=get_doc_preview, inputs=file_input, outputs=doc_viewer)
+    # Auto-OCR + analysis when file is uploaded
+    file_input.change(
+        fn=get_doc_preview, inputs=file_input, outputs=doc_viewer
+    ).then(
+        fn=run_ocr_and_analyze,
+        inputs=[file_input, lang_state],
+        outputs=[doc_state, doc_preview, ocr_status, *chips],
+    )
 
-    def _ocr(fp, lang):
-        text, status = run_ocr(fp, lang)
-        return text, text, status
-
-    def _paste(text, lang):
+    @spaces.GPU(duration=60)
+    def _paste_and_analyze(text, lang):
         t = UI.get(lang, UI["en"])
         if not text or not text.strip():
-            return "", "", t["no_paste"]
-        return text, text, t["ok_paste"].format(n=len(text))
+            return "", "", t["no_paste"], *_fallback_chips(lang)
+        analysis = _get_pipeline().analyze_and_suggest(text, lang)
+        doc_type = analysis.get("doc_type", "Document")
+        suggestions = analysis.get("suggestions", FALLBACK_SUGGESTIONS.get(lang, FALLBACK_SUGGESTIONS["en"]))
+        base = FALLBACK_SUGGESTIONS.get(lang, FALLBACK_SUGGESTIONS["en"])
+        while len(suggestions) < 8:
+            suggestions.append(base[len(suggestions) % len(base)])
+        chip_updates = [gr.update(value=str(s)) for s in suggestions[:8]]
+        status = t["ok_paste"].format(n=len(text)) + f" · {doc_type}"
+        return text, text, status, *chip_updates
 
     def _change_lang(lang):
         t = UI.get(lang, UI["en"])
-        examples = EXAMPLES.get(lang, EXAMPLES["en"])
+        suggestions = FALLBACK_SUGGESTIONS.get(lang, FALLBACK_SUGGESTIONS["en"])
         return (
             lang, t["subtitle"],
             f'<div class="step-label"><span class="step-num">1</span>{t["step1"]}</div>',
             f'<div class="step-label"><span class="step-num">2</span>{t["step2"]}</div>',
             f"**{t['examples']}**",
-            *[gr.update(value=ex) for ex in examples],
+            *[gr.update(value=ex) for ex in suggestions],
         )
 
-    ocr_btn.click(fn=_ocr, inputs=[file_input, lang_state], outputs=[doc_state, doc_preview, ocr_status])
-    paste_btn.click(fn=_paste, inputs=[paste_input, lang_state], outputs=[doc_state, doc_preview, ocr_status])
+    paste_btn.click(
+        fn=_paste_and_analyze,
+        inputs=[paste_input, lang_state],
+        outputs=[doc_state, doc_preview, ocr_status, *chips],
+    )
     lang_radio.change(
         fn=_change_lang, inputs=lang_radio,
         outputs=[lang_state, subtitle_md, step1_lbl, step2_lbl, ex_title, *chips],
     )
     for i, chip in enumerate(chips):
         chip.click(
-            fn=lambda lang, _i=i: EXAMPLES.get(lang, EXAMPLES["en"])[_i],
-            inputs=lang_state, outputs=instr,
+            fn=lambda _chip_val, _i=i: _chip_val,
+            inputs=chips[i], outputs=instr,
         )
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ class DocumentPipeline:
         self,
         ocr_det_arch: str = "db_resnet50",
         ocr_reco_arch: str = "crnn_vgg16_bn",
-        llm_model: str = "Qwen/Qwen2.5-1.5B-Instruct",
+        llm_model: str = "Qwen/Qwen2.5-3B-Instruct",
     ):
         self.ocr = DocumentOCR(det_arch=ocr_det_arch, reco_arch=ocr_reco_arch)
         self.extractor = StructuredExtractor(model_name=llm_model)
@@ -56,3 +56,7 @@ class DocumentPipeline:
         """OCR a document then answer a free-form instruction."""
         text = self.ocr.extract_text(file_path)
         return self.extractor.chat(text, instruction)
+
+    def analyze_and_suggest(self, text: str, lang: str = "en") -> dict:
+        """Identify document type and return contextual suggestions."""
+        return self.extractor.analyze_and_suggest(text, lang)
