@@ -1,0 +1,602 @@
+{
+  "doc_000.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Marie CISSE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB85-299126",
+    "issue_date": "2026-08-11",
+    "period_start": "2026-08-27",
+    "period_end": "2027-08-26",
+    "amount_eur": 1199.19
+  },
+  "doc_001.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Aminata FOURNIER",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU89-115729",
+    "issue_date": "2026-10-05",
+    "period_start": "2026-11-12",
+    "period_end": "2027-11-11",
+    "amount_eur": null
+  },
+  "doc_002.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Ibrahima THIAM",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU68-786609",
+    "issue_date": "2025-12-12",
+    "period_start": "2026-01-03",
+    "period_end": "2027-01-02",
+    "amount_eur": 630.51
+  },
+  "doc_003.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Aminata NDIAYE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU12-988468",
+    "issue_date": "2026-05-24",
+    "period_start": "2026-05-29",
+    "period_end": "2027-05-28",
+    "amount_eur": 353.73
+  },
+  "doc_004.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Julie GUEYE",
+    "insurer": "Assurances Valmont",
+    "policy_number": "MR25-241134",
+    "issue_date": "2026-05-31",
+    "period_start": "2026-06-20",
+    "period_end": "2027-06-19",
+    "amount_eur": null
+  },
+  "doc_005.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Fatou BA",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU60-541194",
+    "issue_date": "2026-11-08",
+    "period_start": "2026-11-26",
+    "period_end": "2027-11-25",
+    "amount_eur": 48.67
+  },
+  "doc_006.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Marie MOREAU",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR47-504928",
+    "issue_date": "2025-12-27",
+    "period_start": "2026-01-05",
+    "period_end": "2027-01-04",
+    "amount_eur": 154.37
+  },
+  "doc_007.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Fatou ROUX",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU49-339477",
+    "issue_date": "2026-03-15",
+    "period_start": "2026-04-04",
+    "period_end": "2027-04-03",
+    "amount_eur": null
+  },
+  "doc_008.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Mamadou NDIAYE",
+    "insurer": "Assurances Valmont",
+    "policy_number": "HB42-349988",
+    "issue_date": "2026-01-26",
+    "period_start": "2026-02-25",
+    "period_end": "2027-02-24",
+    "amount_eur": 416.0
+  },
+  "doc_009.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Sarah LEFEBVRE",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU18-382270",
+    "issue_date": "2026-03-15",
+    "period_start": "2026-04-15",
+    "period_end": "2027-04-14",
+    "amount_eur": 686.25
+  },
+  "doc_010.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Elodie DUBOIS",
+    "insurer": "Assurances Valmont",
+    "policy_number": "AU70-474836",
+    "issue_date": "2026-10-06",
+    "period_start": "2026-10-30",
+    "period_end": "2027-10-29",
+    "amount_eur": null
+  },
+  "doc_011.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Marie CISSE",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU26-931800",
+    "issue_date": "2026-06-12",
+    "period_start": "2026-07-08",
+    "period_end": "2027-07-07",
+    "amount_eur": 551.83
+  },
+  "doc_012.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Julie BERNARD",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU42-536465",
+    "issue_date": "2026-01-21",
+    "period_start": "2026-02-16",
+    "period_end": "2027-02-15",
+    "amount_eur": 604.24
+  },
+  "doc_013.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Moussa MARTIN",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU73-917832",
+    "issue_date": "2026-03-23",
+    "period_start": "2026-04-28",
+    "period_end": "2027-04-27",
+    "amount_eur": null
+  },
+  "doc_014.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Moussa FALL",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB42-308148",
+    "issue_date": "2026-05-16",
+    "period_start": "2026-06-17",
+    "period_end": "2027-06-16",
+    "amount_eur": 1198.92
+  },
+  "doc_015.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Julie MOREAU",
+    "insurer": "Assurances Valmont",
+    "policy_number": "MR70-388529",
+    "issue_date": "2026-03-10",
+    "period_start": "2026-03-28",
+    "period_end": "2027-03-27",
+    "amount_eur": 1237.84
+  },
+  "doc_016.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Mamadou MOREAU",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "MR93-929962",
+    "issue_date": "2026-10-14",
+    "period_start": "2026-10-20",
+    "period_end": "2027-10-19",
+    "amount_eur": null
+  },
+  "doc_017.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Antoine CISSE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU97-307670",
+    "issue_date": "2026-11-07",
+    "period_start": "2026-11-24",
+    "period_end": "2027-11-23",
+    "amount_eur": 1227.74
+  },
+  "doc_018.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Aminata FALL",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB59-236220",
+    "issue_date": "2026-01-12",
+    "period_start": "2026-02-14",
+    "period_end": "2027-02-13",
+    "amount_eur": 697.46
+  },
+  "doc_019.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Antoine LEFEBVRE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU49-663039",
+    "issue_date": "2026-04-10",
+    "period_start": "2026-05-05",
+    "period_end": "2027-05-04",
+    "amount_eur": null
+  },
+  "doc_020.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Camille LEFEBVRE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU32-659018",
+    "issue_date": "2026-01-07",
+    "period_start": "2026-02-02",
+    "period_end": "2027-02-01",
+    "amount_eur": 1031.19
+  },
+  "doc_021.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Pierre FOURNIER",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR81-769904",
+    "issue_date": "2026-09-12",
+    "period_start": "2026-09-27",
+    "period_end": "2027-09-26",
+    "amount_eur": 796.62
+  },
+  "doc_022.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Awa BA",
+    "insurer": "Assurances Valmont",
+    "policy_number": "HB10-734627",
+    "issue_date": "2026-09-03",
+    "period_start": "2026-10-02",
+    "period_end": "2027-10-01",
+    "amount_eur": null
+  },
+  "doc_023.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Hugo FOURNIER",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "MR41-596145",
+    "issue_date": "2026-06-25",
+    "period_start": "2026-07-31",
+    "period_end": "2027-07-30",
+    "amount_eur": 229.82
+  },
+  "doc_024.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Mamadou LEFEBVRE",
+    "insurer": "Assurances Valmont",
+    "policy_number": "AU97-397880",
+    "issue_date": "2026-02-24",
+    "period_start": "2026-03-21",
+    "period_end": "2027-03-20",
+    "amount_eur": 1084.2
+  },
+  "doc_025.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Elodie BA",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB62-965263",
+    "issue_date": "2025-12-05",
+    "period_start": "2026-01-12",
+    "period_end": "2027-01-11",
+    "amount_eur": null
+  },
+  "doc_026.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Pierre SARR",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB50-304142",
+    "issue_date": "2026-03-16",
+    "period_start": "2026-04-03",
+    "period_end": "2027-04-02",
+    "amount_eur": 1162.55
+  },
+  "doc_027.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Awa ROUX",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU22-310694",
+    "issue_date": "2026-10-22",
+    "period_start": "2026-11-18",
+    "period_end": "2027-11-17",
+    "amount_eur": 1353.09
+  },
+  "doc_028.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Mamadou CISSE",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "HB71-253673",
+    "issue_date": "2026-10-25",
+    "period_start": "2026-11-11",
+    "period_end": "2027-11-10",
+    "amount_eur": null
+  },
+  "doc_029.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Julie NDIAYE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "MR64-640317",
+    "issue_date": "2026-05-21",
+    "period_start": "2026-06-17",
+    "period_end": "2027-06-16",
+    "amount_eur": 663.88
+  },
+  "doc_030.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Aminata LEFEBVRE",
+    "insurer": "Assurances Valmont",
+    "policy_number": "AU75-930838",
+    "issue_date": "2026-11-01",
+    "period_start": "2026-11-06",
+    "period_end": "2027-11-05",
+    "amount_eur": 511.53
+  },
+  "doc_031.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Antoine SOW",
+    "insurer": "Assurances Valmont",
+    "policy_number": "MR78-828549",
+    "issue_date": "2026-06-29",
+    "period_start": "2026-07-27",
+    "period_end": "2027-07-26",
+    "amount_eur": null
+  },
+  "doc_032.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Thomas DIOP",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB48-454225",
+    "issue_date": "2026-04-11",
+    "period_start": "2026-04-29",
+    "period_end": "2027-04-28",
+    "amount_eur": 992.78
+  },
+  "doc_033.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Antoine NDIAYE",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "MR61-629280",
+    "issue_date": "2026-04-24",
+    "period_start": "2026-05-02",
+    "period_end": "2027-05-01",
+    "amount_eur": 1138.19
+  },
+  "doc_034.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Marie BERNARD",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "HB15-505193",
+    "issue_date": "2026-09-24",
+    "period_start": "2026-10-09",
+    "period_end": "2027-10-08",
+    "amount_eur": null
+  },
+  "doc_035.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Ibrahima SARR",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "MR93-382859",
+    "issue_date": "2026-08-20",
+    "period_start": "2026-09-29",
+    "period_end": "2027-09-28",
+    "amount_eur": 1379.01
+  },
+  "doc_036.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Mamadou GIRARD",
+    "insurer": "Assurances Valmont",
+    "policy_number": "HB50-177074",
+    "issue_date": "2026-07-04",
+    "period_start": "2026-07-23",
+    "period_end": "2027-07-22",
+    "amount_eur": 663.07
+  },
+  "doc_037.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Mamadou BA",
+    "insurer": "Assurances Valmont",
+    "policy_number": "AU16-474023",
+    "issue_date": "2026-07-15",
+    "period_start": "2026-08-22",
+    "period_end": "2027-08-21",
+    "amount_eur": null
+  },
+  "doc_038.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Thomas LAMBERT",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB26-349992",
+    "issue_date": "2026-02-05",
+    "period_start": "2026-03-12",
+    "period_end": "2027-03-11",
+    "amount_eur": 211.06
+  },
+  "doc_039.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Sarah FALL",
+    "insurer": "Assurances Valmont",
+    "policy_number": "HB93-305497",
+    "issue_date": "2026-04-01",
+    "period_start": "2026-04-08",
+    "period_end": "2027-04-07",
+    "amount_eur": 947.88
+  },
+  "doc_040.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Nicolas CISSE",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR71-601801",
+    "issue_date": "2026-04-04",
+    "period_start": "2026-05-01",
+    "period_end": "2027-04-30",
+    "amount_eur": null
+  },
+  "doc_041.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Sarah ROUX",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU93-976970",
+    "issue_date": "2026-02-22",
+    "period_start": "2026-03-19",
+    "period_end": "2027-03-18",
+    "amount_eur": 464.55
+  },
+  "doc_042.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Laurent THIAM",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU19-425211",
+    "issue_date": "2026-08-08",
+    "period_start": "2026-08-26",
+    "period_end": "2027-08-25",
+    "amount_eur": 1352.1
+  },
+  "doc_043.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Thomas NDIAYE",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR82-723659",
+    "issue_date": "2026-05-24",
+    "period_start": "2026-06-15",
+    "period_end": "2027-06-14",
+    "amount_eur": null
+  },
+  "doc_044.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Camille SARR",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR34-874721",
+    "issue_date": "2026-06-24",
+    "period_start": "2026-07-22",
+    "period_end": "2027-07-21",
+    "amount_eur": 1189.42
+  },
+  "doc_045.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Hugo SOW",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "AU93-982573",
+    "issue_date": "2026-09-16",
+    "period_start": "2026-10-18",
+    "period_end": "2027-10-17",
+    "amount_eur": 139.73
+  },
+  "doc_046.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Antoine BA",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU72-902530",
+    "issue_date": "2026-03-29",
+    "period_start": "2026-05-06",
+    "period_end": "2027-05-05",
+    "amount_eur": null
+  },
+  "doc_047.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Mamadou BA",
+    "insurer": "Assurances Valmont",
+    "policy_number": "MR21-587230",
+    "issue_date": "2026-05-20",
+    "period_start": "2026-06-28",
+    "period_end": "2027-06-27",
+    "amount_eur": 964.87
+  },
+  "doc_048.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Nicolas GIRARD",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "MR77-406209",
+    "issue_date": "2026-03-24",
+    "period_start": "2026-04-15",
+    "period_end": "2027-04-14",
+    "amount_eur": 1436.7
+  },
+  "doc_049.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Mamadou GIRARD",
+    "insurer": "Assurances Valmont",
+    "policy_number": "AU55-327923",
+    "issue_date": "2026-02-05",
+    "period_start": "2026-02-25",
+    "period_end": "2027-02-24",
+    "amount_eur": null
+  },
+  "doc_050.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Sarah THIAM",
+    "insurer": "Mutuelle Horizon Ouest",
+    "policy_number": "HB80-909165",
+    "issue_date": "2026-07-16",
+    "period_start": "2026-07-26",
+    "period_end": "2027-07-25",
+    "amount_eur": 739.1
+  },
+  "doc_051.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Moussa SARR",
+    "insurer": "Assurances Valmont",
+    "policy_number": "HB63-735513",
+    "issue_date": "2026-08-04",
+    "period_start": "2026-08-19",
+    "period_end": "2027-08-18",
+    "amount_eur": 643.39
+  },
+  "doc_052.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Nicolas MARTIN",
+    "insurer": "Assurances Valmont",
+    "policy_number": "AU20-468813",
+    "issue_date": "2026-03-24",
+    "period_start": "2026-04-15",
+    "period_end": "2027-04-14",
+    "amount_eur": null
+  },
+  "doc_053.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Camille LEFEBVRE",
+    "insurer": "Assurances Valmont",
+    "policy_number": "HB21-919375",
+    "issue_date": "2026-06-30",
+    "period_start": "2026-08-02",
+    "period_end": "2027-08-01",
+    "amount_eur": 346.44
+  },
+  "doc_054.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Julie SARR",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU23-800093",
+    "issue_date": "2026-01-09",
+    "period_start": "2026-02-08",
+    "period_end": "2027-02-07",
+    "amount_eur": 1015.83
+  },
+  "doc_055.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Marie MARTIN",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU47-758266",
+    "issue_date": "2026-03-18",
+    "period_start": "2026-04-16",
+    "period_end": "2027-04-15",
+    "amount_eur": null
+  },
+  "doc_056.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Claire GUEYE",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR91-447769",
+    "issue_date": "2026-04-18",
+    "period_start": "2026-05-21",
+    "period_end": "2027-05-20",
+    "amount_eur": 1232.1
+  },
+  "doc_057.pdf": {
+    "doc_type": "avis_echeance",
+    "insured_name": "Mamadou FOURNIER",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU22-337589",
+    "issue_date": "2026-10-24",
+    "period_start": "2026-10-31",
+    "period_end": "2027-10-30",
+    "amount_eur": 272.95
+  },
+  "doc_058.pdf": {
+    "doc_type": "attestation_auto",
+    "insured_name": "Moussa GIRARD",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "AU61-742876",
+    "issue_date": "2026-07-06",
+    "period_start": "2026-07-31",
+    "period_end": "2027-07-30",
+    "amount_eur": null
+  },
+  "doc_059.pdf": {
+    "doc_type": "quittance_prime",
+    "insured_name": "Hugo ROUX",
+    "insurer": "Cap Sud Assurances",
+    "policy_number": "MR47-965272",
+    "issue_date": "2026-04-04",
+    "period_start": "2026-04-15",
+    "period_end": "2027-04-14",
+    "amount_eur": 923.58
+  }
+}
